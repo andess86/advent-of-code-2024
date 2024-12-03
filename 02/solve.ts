@@ -3,16 +3,13 @@ const data = await input.text();
 
 type Direction = "increasing" | "decreasing";
 
-const levels = data
-  .split(/\r?\n/)
-  .filter((line) => line)
-  .map(
-    (line) =>
-      line
-        .split(" ")
-        .filter((num) => num) // Remove any empty strings from multiple spaces
-        .map((num) => Number(num)) // Convert each string to number
-  );
+const levels = data.split(/\r?\n/).map(
+  (line) =>
+    line
+      .split(" ")
+      .filter((num) => num) // Remove any empty strings from multiple spaces
+      .map((num) => Number(num)) // Convert each string to number
+);
 
 const isSafe = (level: number[]): boolean => {
   return (
