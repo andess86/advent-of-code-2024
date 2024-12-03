@@ -3,15 +3,28 @@ const data = await input.text();
 
 type Direction = "increasing" | "decreasing";
 
-const levels = data.split(/\r?\n/).map(
-  (line) => line.split(" ").map((num) => Number(num)) // Convert each string to number
-);
+const levels = data
+  .split(/\r?\n/)
+  .map((line) => line.split(" ").map((num) => Number(num)));
 
 const isSafe = (level: number[]): boolean => {
   return (
     (isMonotonic(level, "increasing") || isMonotonic(level, "decreasing")) &&
     hasValidSteps(level)
   );
+};
+
+const isSafeWithDampener = (level: number[]): boolean => {
+  if (isSafe(level)) {
+    return true;
+  }
+  for (let i = 0; i < level.length; i++) {
+    const levelWithoutOne = [...level.slice(0, i), ...level.slice(i + 1)];
+    if (isSafe(levelWithoutOne)) {
+      return true;
+    }
+  }
+  return false;
 };
 
 const isMonotonic = (level: number[], direction: Direction): boolean => {
@@ -36,13 +49,28 @@ const hasValidSteps = (levels: number[]): boolean => {
   return true;
 };
 
-//Fancy self invoking function thingy
 const solvePart1 = (() => {
+  console.time("Part 1 Timer");
+
   const result = levels.reduce((count, level) => {
     const safe = isSafe(level);
     return safe ? count + 1 : count;
   }, 0);
+  console.timeEnd("Part 1 Timer");
 
-  console.log("Safe levels:", result);
+  console.log("Safe levels, part 1:", result);
+  return result;
+})();
+
+const solvePart2 = (() => {
+  console.time("Part 2 Timer");
+
+  const result = levels.reduce((count, level) => {
+    const safe = isSafeWithDampener(level);
+    return safe ? count + 1 : count;
+  }, 0);
+  console.timeEnd("Part 2 Timer");
+
+  console.log("Safe levels, part 2:", result);
   return result;
 })();
