@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>XMAS Word Search Animation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #f0f0f0;
+      }
+      #file-input,
+      #search-button {
+        margin-bottom: 20px;
+        margin-right: 10px;
+      }
+      #search-button {
+        padding: 10px 20px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      #found-words {
+        font-family: monospace;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <input type="file" id="file-input" accept=".txt" />
+    <button id="search-button">Find XMAS</button>
+    <div id="found-words">Found XMAS's: 0</div>
+
+    <script>
+      let matrix = [];
+      let cellSize = 10;
+      let letterFrequency = {};
+      let searchWord = "XMAS";
+      let isSearching = false;
+      let searchQueue = [];
+      let animationSpeed = 2000;
+      let totalFound = 0;
+
+      function setup() {
+        createCanvas(800, 800);
+        textAlign(CENTER, CENTER);
+        textSize(8);
+
+        let fileInput = document.getElementById("file-input");
+        fileInput.addEventListener("change", handleFileSelect);
+
+        let searchButton = document.getElementById("search-button");
+        searchButton.addEventListener("click", startSearch);
+      }
+
+      function draw() {
+        background(240);
+
+        if (isSearching && searchQueue.length > 0) {
+          for (let i = 0; i < animationSpeed && searchQueue.length > 0; i++) {
+            let step = searchQueue.shift();
+            processSearchStep(step);
+          }
+          if (searchQueue.length === 0) {
+            isSearching = false;
+            console.log("Search complete");
+          }
+        }
+
+        for (let i = 0; i < matrix.length; i++) {
+          for (let j = 0; j < matrix[i].length; j++) {
+            fill(255);
+            stroke(200);
+
+            let freq = letterFrequency[`${j},${i}`] || 0;
+            if (freq > 0) {
+              let maxFreq = Math.max(...Object.values(letterFrequency));
+              colorMode(HSB, 360, 100, 100);
+              let hue = map(freq, 1, maxFreq, 60, 0);
+              let saturation = map(freq, 1, maxFreq, 70, 85);
+              let brightness = map(freq, 1, maxFreq, 95, 90);
+              fill(hue, saturation, brightness);
+              colorMode(RGB);
+            }
+
+            rect(j * cellSize, i * cellSize, cellSize, cellSize);
+
+            fill(0);
+            noStroke();
+            text(
+              matrix[i][j],
+              j * cellSize + cellSize / 2,
+              i * cellSize + cellSize / 2
+            );
+          }
+        }
+      }
+
+      function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (file) {
+          let reader = new FileReader();
+          reader.onload = function (e) {
+            let rows = e.target.result.split("\n");
+            matrix = rows.map((row) => row.trim().split(""));
+            let width = matrix[0].length * cellSize;
+            let height = matrix.length * cellSize;
+            resizeCanvas(width, height);
+            letterFrequency = {};
+          };
+          reader.readAsText(file);
+        }
+      }
+
+      function startSearch() {
+        if (!isSearching) {
+          isSearching = true;
+          letterFrequency = {};
+          totalFound = 0;
+          document.getElementById("found-words").innerHTML = "Found XMAS's: 0";
+          searchQueue = generateSearchSteps();
+        }
+      }
+
+      function generateSearchSteps() {
+        let steps = [];
+        const directions = [
+          [-1, -1],
+          [0, -1],
+          [1, -1],
+          [-1, 0],
+          [1, 0],
+          [-1, 1],
+          [0, 1],
+          [1, 1],
+        ];
+
+        for (let y = 0; y < matrix.length; y++) {
+          for (let x = 0; x < matrix[y].length; x++) {
+            if (matrix[y][x] === searchWord[0]) {
+              directions.forEach(([dx, dy]) => {
+                steps.push({ startX: x, startY: y, dx, dy });
+              });
+            }
+          }
+        }
+        return steps;
+      }
+
+      function processSearchStep({ startX, startY, dx, dy }) {
+        let positions = [];
+        let x = startX;
+        let y = startY;
+        let valid = true;
+
+        for (let i = 0; i < searchWord.length; i++) {
+          if (
+            y < 0 ||
+            y >= matrix.length ||
+            x < 0 ||
+            x >= matrix[y].length ||
+            matrix[y][x] !== searchWord[i]
+          ) {
+            valid = false;
+            break;
+          }
+          positions.push({ x, y });
+          x += dx;
+          y += dy;
+        }
+
+        if (valid) {
+          totalFound++;
+          document.getElementById(
+            "found-words"
+          ).innerHTML = `Found XMAS's: ${totalFound}`;
+
+          positions.forEach((pos) => {
+            let key = `${pos.x},${pos.y}`;
+            letterFrequency[key] = (letterFrequency[key] || 0) + 1;
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
